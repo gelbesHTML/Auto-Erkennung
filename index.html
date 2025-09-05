@@ -6,6 +6,31 @@
     <title>Autoerkennung mit Teachable Machine</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+    <style>
+    body {
+        font-family: "Segoe UI", sans-serif;
+        text-align: center;
+        background: #f5f5f5;
+        color: #333;
+    }
+
+    input[type="file"] {
+        margin: 20px 0;
+    }
+
+    img#preview {
+        margin-top: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h3#result {
+        margin-top: 30px;
+        font-size: 1.4em;
+        color: #007700;
+    }
+</style>
+
 </head>
 <body style="font-family: sans-serif; text-align: center; padding: 50px;">
     <h1>AUTO-Erkennung - Schlechtes Wortspiel, ik...</h1>
