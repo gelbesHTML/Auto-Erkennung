@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Car Recognition (Teachable Machine)</title>
+  <title>Auto-Erkennung (bad play on words, ik) (Teachable Machine)</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.4/dist/teachablemachine-image.min.js"></script>
@@ -30,14 +30,14 @@
 <body>
   <div class="wrap">
     <h1>Car Recognition</h1>
-    <p>1) Paste your <b>Teachable Machine model URL</b> (it must end with <code>/</code>). 2) Click <b>Load model</b>. 3) Upload an image.</p>
+    <p>1) Einfach den Link hier pasten: https://teachablemachine.withgoogle.com/models/gcRX6YPpt/ your <b>Teachable Machine model URL</b>  2) Klick hier auf <b>Load model</b>. 3) Einfach uploaden.</p>
 
     <div class="row" style="margin-bottom:10px">
       <input id="modelUrl" class="url" placeholder="https://teachablemachine.withgoogle.com/models/YOUR_ID/" />
       <button id="loadBtn">Load model</button>
     </div>
 
-    <div id="status">No model loaded.</div>
+    <div id="status">Wait, es lädt noch...</div>
 
     <input id="upload" type="file" accept="image/*" disabled />
     <img id="preview" alt="Preview" />
