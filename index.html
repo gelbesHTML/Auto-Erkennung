@@ -28,7 +28,6 @@
     let model, ready = false;
 
    const MODEL_URL = "https://teachablemachine.withgoogle.com/models/gcRX6YPpt/";
-let model;
 
 async function loadModel() {
   model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
