@@ -1,69 +1,161 @@
-<!doctype html>
+https://teachablemachine.withgoogle.com/models/gcRX6YPpt/<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Car Recognition (Teachable Machine)</title>
+  <title>Teachable Machine – Image Classifier (Browser Only)</title>
 
-  <!-- Browser builds of TF.js and Teachable Machine -->
+  <!-- Correct browser builds -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.4/dist/teachablemachine-image.min.js"></script>
 
   <style>
-    body { font-family: sans-serif; max-width: 800px; margin: 40px auto; text-align: center; }
-    #preview { max-width: 320px; display: none; margin: 20px auto; border-radius: 10px; }
-    #status { color: #666; margin: 10px; }
-    #result { font-size: 1.2rem; margin-top: 15px; }
+    :root { --w: 900px; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:0; padding:24px; }
+    .wrap { max-width: var(--w); margin: 0 auto; text-align: center; }
+    h1 { margin: 8px 0 6px; }
+    .row { display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap: wrap; }
+    .url { max-width:560px; width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px; }
+    button, input[type="file"] { font-size:1rem; padding:10px 14px; border:1px solid #ddd; border-radius:10px; background:#fafafa; }
+    button:disabled, input[type="file"]:disabled { opacity:.6; cursor:not-allowed; }
+    #status { color:#555; margin: 10px 0 16px; }
+    #preview { max-width: 360px; display:none; border-radius:12px; margin: 16px auto; }
+    #result { font-size: 1.2rem; font-weight: 600; margin-top: 12px; }
+    .list { max-width:560px; margin: 12px auto; text-align: left; }
+    .item { display:grid; grid-template-columns: 140px 1fr 60px; gap:10px; align-items:center; margin:8px 0; }
+    .bar { height:10px; background:#eee; border-radius:6px; overflow:hidden; }
+    .fill { height:100%; background:#4a90e2; width:0; }
+    code { background:#f5f5f5; padding:2px 6px; border-radius:6px; }
+    footer { margin-top: 24px; color:#777; font-size:.9rem; }
   </style>
 </head>
 <body>
-  <h1>Car Recognition</h1>
-  <div id="status">Loading model…</div>
+  <div class="wrap">
+    <h1>Teachable Machine – Image Classifier</h1>
+    <p>Paste your <b>Teachable Machine model URL</b> (must end with <code>/</code>), click <b>Load model</b>, then upload an image.</p>
 
-  <input id="upload" type="file" accept="image/*" disabled />
-  <br><br>
-  <img id="preview" alt="Preview" />
-  <div id="result"></div>
+    <div class="row" style="margin-bottom:10px">
+      <input id="modelUrl" class="url" placeholder="https://teachablemachine.withgoogle.com/models/YOUR_ID/" />
+      <button id="loadBtn">Load model</button>
+      <button id="clearBtn" title="Forget saved URL">Clear</button>
+    </div>
+
+    <div id="status">No model loaded.</div>
+
+    <input id="upload" type="file" accept="image/*" disabled />
+    <img id="preview" alt="Preview" />
+
+    <div id="result"></div>
+    <div id="details" class="list"></div>
+
+    <footer>
+      Runs 100% in your browser (ideal for GitHub Pages). You can also prefill via <code>?model=...</code> or it remembers the last URL.
+    </footer>
+  </div>
 
   <script>
-    // 👉 Your Teachable Machine model URL (must end with a /)
-    const MODEL_URL = "https://teachablemachine.withgoogle.com/models/gcRX6YPpt/";
+    let model, ready = false;
 
-    let model;
+    function getQueryParam(name){
+      const m = new URLSearchParams(window.location.search).get(name);
+      return m ? decodeURIComponent(m) : "";
+    }
 
-    async function loadModel() {
+    function validModelUrl(u){
+      return /^https:\\/\\/teachablemachine\\.withgoogle\\.com\\/models\\/.+\\/$/.test(u);
+    }
+
+    async function loadModel(baseUrl) {
+      const base = (baseUrl || "").trim();
+      const status = document.getElementById("status");
+      const btn = document.getElementById("loadBtn");
+      const upload = document.getElementById("upload");
+
+      if (!validModelUrl(base)) {
+        alert("Please paste the FULL Teachable Machine model URL (must end with /).");
+        return;
+      }
+
+      status.textContent = "Loading model…";
+      btn.disabled = true;
+      upload.disabled = true;
+
       try {
-        model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
-        document.getElementById("status").textContent = "Model loaded. Choose an image.";
-        document.getElementById("upload").disabled = false;
-      } catch (e) {
-        document.getElementById("status").textContent = "Error loading model.";
-        console.error(e);
+        const modelURL = base + "model.json";
+        const metadataURL = base + "metadata.json";
+        model = await tmImage.load(modelURL, metadataURL);
+        ready = true;
+        status.textContent = "Model loaded. Choose an image.";
+        upload.disabled = false;
+        try { localStorage.setItem("tm_model_url", base); } catch {}
+      } catch (err) {
+        console.error(err);
+        status.textContent = "Failed to load model. Check the URL and try again.";
+        btn.disabled = false;
       }
     }
-    loadModel();
 
-    document.getElementById("upload").addEventListener("change", async (event) => {
-      const file = event.target.files[0];
+    document.getElementById("loadBtn").addEventListener("click", () => {
+      const u = document.getElementById("modelUrl").value;
+      loadModel(u);
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      try { localStorage.removeItem("tm_model_url"); } catch {}
+      document.getElementById("modelUrl").value = "";
+      document.getElementById("status").textContent = "Cleared. Paste your model URL again.";
+    });
+
+    document.getElementById("upload").addEventListener("change", async (ev) => {
+      if (!ready) return;
+      const file = ev.target.files?.[0];
       if (!file) return;
 
+      const status = document.getElementById("status");
       const img = document.getElementById("preview");
-      img.src = window.URL.createObjectURL(file);  // ✅ fixed
+      const result = document.getElementById("result");
+      const details = document.getElementById("details");
+
+      img.src = window.URL.createObjectURL(file);
       img.style.display = "block";
+      status.textContent = "Running inference…";
+      result.textContent = "";
+      details.innerHTML = "";
 
-      document.getElementById("status").textContent = "Predicting…";
-      document.getElementById("result").textContent = "";
+      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
 
-      await new Promise((resolve) => img.onload = resolve);
+      try {
+        const preds = await model.predict(img);
+        preds.sort((a,b) => b.probability - a.probability);
 
-      const preds = await model.predict(img);
-      preds.sort((a, b) => b.probability - a.probability);
+        const best = preds[0];
+        result.textContent = `Prediction: ${best.className} (${(best.probability*100).toFixed(1)}%)`;
+        status.textContent = "Done.";
 
-      const best = preds[0];
-      document.getElementById("result").textContent =
-        `Prediction: ${best.className} (${(best.probability * 100).toFixed(1)}%)`;
-      document.getElementById("status").textContent = "Done.";
+        const top = preds.slice(0, Math.min(5, preds.length));
+        details.innerHTML = top.map(p => {
+          const pct = Math.round(p.probability * 100);
+          return `<div class="item">
+            <div>${p.className}</div>
+            <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
+            <div>${pct}%</div>
+          </div>`;
+        }).join("");
+      } catch (e) {
+        console.error(e);
+        status.textContent = "Error during prediction.";
+      }
     });
+
+    // Prefill URL from query param or localStorage
+    (function initPrefill(){
+      const saved = (function(){ try { return localStorage.getItem("tm_model_url") || ""; } catch { return ""; } })();
+      const fromQuery = getQueryParam("model");
+      const initial = fromQuery || saved;
+      if (initial) {
+        document.getElementById("modelUrl").value = initial;
+      }
+    })();
   </script>
 </body>
 </html>
