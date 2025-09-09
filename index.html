@@ -5,128 +5,65 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Car Recognition (Teachable Machine)</title>
 
-  <!-- Correct browser builds (NOT the Node versions) -->
+  <!-- Browser builds of TF.js and Teachable Machine -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.4/dist/teachablemachine-image.min.js"></script>
 
   <style>
-    :root { --w: 860px; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 24px; }
-    .wrap { max-width: var(--w); margin: 0 auto; text-align: center; }
-    h1 { margin: 8px 0 16px; }
-    #status { color:#555; margin: 10px 0 18px; }
-    #preview { max-width: 360px; display:none; border-radius: 12px; margin: 16px auto; }
-    #result { font-size: 1.2rem; font-weight: 600; margin-top: 12px; }
-    .row { display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap: wrap; }
-    .url { max-width:520px; width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; }
-    button, input[type="file"] { font-size:1rem; padding:10px 14px; border:1px solid #ddd; border-radius:8px; background:#fafafa; }
-    button:disabled, input[type="file"]:disabled { opacity:.6; cursor:not-allowed; }
-    .list { max-width:520px; margin: 12px auto; text-align:left; }
-    .bar { height:10px; background:#eee; border-radius:6px; overflow:hidden; }
-    .fill { height:100%; background:#4a90e2; width:0; }
-    .item { display:grid; grid-template-columns: 140px 1fr 60px; gap:10px; align-items:center; margin:8px 0; }
-    code { background:#f4f4f4; padding:2px 6px; border-radius:6px; }
+    body { font-family: sans-serif; max-width: 800px; margin: 40px auto; text-align: center; }
+    #preview { max-width: 320px; display: none; margin: 20px auto; border-radius: 10px; }
+    #status { color: #666; margin: 10px; }
+    #result { font-size: 1.2rem; margin-top: 15px; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Car Recognition</h1>
-    <p>1) Paste your <b>Teachable Machine model URL</b> (it must end with <code>/</code>). 2) Click <b>Load model</b>. 3) Upload an image.</p>
+  <h1>Car Recognition</h1>
+  <div id="status">Loading model…</div>
 
-    <div class="row" style="margin-bottom:10px">
-      <input id="modelUrl" class="url" placeholder="https://teachablemachine.withgoogle.com/models/YOUR_ID/" />
-      <button id="loadBtn">Load model</button>
-    </div>
-
-    <div id="status">No model loaded.</div>
-
-    <input id="upload" type="file" accept="image/*" disabled />
-    <img id="preview" alt="Preview" />
-
-    <div id="result"></div>
-    <div id="details" class="list"></div>
-  </div>
+  <input id="upload" type="file" accept="image/*" disabled />
+  <br><br>
+  <img id="preview" alt="Preview" />
+  <div id="result"></div>
 
   <script>
-    let model, ready = false;
+    // 👉 Your Teachable Machine model URL (must end with a /)
+    const MODEL_URL = "https://teachablemachine.withgoogle.com/models/gcRX6YPpt/";
 
-    async function loadModel(baseUrl) {
-      const base = (baseUrl || "").trim();
-      if (!/^https:\/\/teachablemachine\.withgoogle\.com\/models\/[^\/]+\/$/.test(base)) {
-        alert("Please paste the full Teachable Machine model URL (must end with /).");
-        return;
-      }
+    let model;
 
-      const status = document.getElementById("status");
-      const btn = document.getElementById("loadBtn");
-      const upload = document.getElementById("upload");
-
-      status.textContent = "Loading model…";
-      btn.disabled = true;
-
+    async function loadModel() {
       try {
-        const modelURL = base + "model.json";
-        const metadataURL = base + "metadata.json";
-        model = await tmImage.load(modelURL, metadataURL);
-        ready = true;
-        status.textContent = "Model loaded. Choose an image.";
-        upload.disabled = false;
-      } catch (err) {
-        console.error(err);
-        status.textContent = "Failed to load model. Check the URL and try again.";
-        btn.disabled = false;
+        model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+        document.getElementById("status").textContent = "Model loaded. Choose an image.";
+        document.getElementById("upload").disabled = false;
+      } catch (e) {
+        document.getElementById("status").textContent = "Error loading model.";
+        console.error(e);
       }
     }
+    loadModel();
 
-    document.getElementById("loadBtn").addEventListener("click", () => {
-      const u = document.getElementById("modelUrl").value;
-      loadModel(u);
-    });
-
-    document.getElementById("upload").addEventListener("change", async (ev) => {
-      if (!ready) return;
-      const file = ev.target.files?.[0];
+    document.getElementById("upload").addEventListener("change", async (event) => {
+      const file = event.target.files[0];
       if (!file) return;
 
-      const status = document.getElementById("status");
       const img = document.getElementById("preview");
-      const result = document.getElementById("result");
-      const details = document.getElementById("details");
-
-      img.src = URL.createObjectURL(file);
+      img.src = window.URL.createObjectURL(file);  // ✅ fixed
       img.style.display = "block";
-      status.textContent = "Running inference…";
-      result.textContent = "";
-      details.innerHTML = "";
 
-      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
+      document.getElementById("status").textContent = "Predicting…";
+      document.getElementById("result").textContent = "";
 
-      try {
-        const preds = await model.predict(img);
-        preds.sort((a,b) => b.probability - a.probability);
+      await new Promise((resolve) => img.onload = resolve);
 
-        const best = preds[0];
-        result.textContent = `Prediction: ${best.className} (${(best.probability*100).toFixed(1)}%)`;
-        status.textContent = "Done.";
+      const preds = await model.predict(img);
+      preds.sort((a, b) => b.probability - a.probability);
 
-        // Show top classes with bars
-        const top = preds.slice(0, Math.min(5, preds.length));
-        details.innerHTML = top.map(p => {
-          const pct = Math.round(p.probability * 100);
-          return `<div class="item">
-            <div>${p.className}</div>
-            <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
-            <div>${pct}%</div>
-          </div>`;
-        }).join("");
-      } catch (e) {
-        console.error(e);
-        status.textContent = "Error during prediction.";
-      }
+      const best = preds[0];
+      document.getElementById("result").textContent =
+        `Prediction: ${best.className} (${(best.probability * 100).toFixed(1)}%)`;
+      document.getElementById("status").textContent = "Done.";
     });
-
-    // OPTIONAL: prefill your model URL here so you don’t have to paste it each time:
-    // document.getElementById("modelUrl").value = "MODEL_URL";
   </script>
 </body>
 </html>
