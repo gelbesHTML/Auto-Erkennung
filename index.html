@@ -27,36 +27,30 @@
     const URL = "https://teachablemachine.withgoogle.com/models/gcRX6YPpt/";
     let model, ready = false;
 
-    async function loadModel(){
-      try {
-        model = await tmImage.load(URL + "model.json", URL + "metadata.json");
-        ready = true;
-        document.getElementById("status").textContent = "Modell geladen. Wähle ein Bild aus.";
-        document.getElementById("upload").disabled = false;
-      } catch(e){
-        document.getElementById("status").textContent = "Fehler beim Laden.";
-        console.error(e);
-      }
-    }
-    loadModel();
+   const MODEL_URL = "https://teachablemachine.withgoogle.com/models/gcRX6YPpt/";
+let model;
 
-    document.getElementById("upload").addEventListener("change", async (ev)=>{
-      if(!ready) return;
-      const file = ev.target.files[0];
-      if(!file) return;
-      const img = document.getElementById("preview");
-      img.src = URL.createObjectURL(file);
-      img.style.display = "block";
-      document.getElementById("status").textContent = "Erkenne…";
-      await new Promise(res => img.onload=res);
+async function loadModel() {
+  model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+  console.log("Model loaded");
+}
 
-      const preds = await model.predict(img);
-      preds.sort((a,b)=> b.probability - a.probability);
-      const top = preds[0];
-      document.getElementById("result").textContent =
-        `Erkannt: ${top.className} (${(top.probability*100).toFixed(1)}%)`;
-      document.getElementById("status").textContent = "Fertig.";
-    });
+document.getElementById("upload").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const img = document.getElementById("preview");
+  img.src = window.URL.createObjectURL(file); // ✅ use window.URL
+  img.style.display = "block";
+
+  await new Promise(r => img.onload = r);
+
+  const preds = await model.predict(img);
+  preds.sort((a, b) => b.probability - a.probability);
+  document.getElementById("result").textContent =
+    `${preds[0].className} (${(preds[0].probability * 100).toFixed(1)}%)`;
+});
+
   </script>
 </body>
 </html>
