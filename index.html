@@ -72,7 +72,7 @@
         const metadataURL = base + "metadata.json";
         model = await tmImage.load(modelURL, metadataURL);
         ready = true;
-        status.textContent = "Model loaded. Choose an image.";
+        status.textContent = "Model ist ready, Bild kann kann hochgeladen werden!";
         upload.disabled = false;
       } catch (err) {
         console.error(err);
